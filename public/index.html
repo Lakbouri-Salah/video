@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Google Drive Video Stream</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial,
+          sans-serif;
+        margin: 2rem;
+      }
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+      }
+      video {
+        width: 100%;
+        height: auto;
+        background: #000;
+        border-radius: 8px;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+      }
+      .note {
+        color: #555;
+        font-size: 0.95rem;
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Google Drive Video Stream (no iframe)</h1>
+      <video id="player" controls preload="metadata">
+        <source src="/video?id=16GwWPFWLaB1TAQ3i0kl0Sioy865njv0T" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      <p class="note">
+        Make sure the Google Drive file is shared appropriately (e.g., anyone
+        with the link) or accessible with your API key.
+      </p>
+    </div>
+
+   
+  </body>
+</html>
