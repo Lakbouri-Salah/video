@@ -2,8 +2,6 @@
   publish = "public"
   command = ""
 
-# Keep /video path working by proxying to the Netlify Function
-[[redirects]]
-  from = "/video"
-  to = "/.netlify/functions/video"
-  status = 200
+[[edge_functions]]
+  path = "/video"
+  function = "video"
