@@ -19,7 +19,7 @@ export async function onRequest(context) {
 
   if (request.method === 'OPTIONS') {
     if (!allowed) {
-      return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 403 });
+      return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 201 });
     }
     const preflightHeaders = new Headers();
     preflightHeaders.set('Access-Control-Allow-Origin', origin);
@@ -31,7 +31,7 @@ export async function onRequest(context) {
   }
 
   if (!allowed) {
-    return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 403 });
+    return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 201 });
   }
 
   const GOOGLE_API_KEY = 'AIzaSyACJIrfwHZysyoxgToFKsNX7OgUaxfqD5c';
