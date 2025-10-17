@@ -15,14 +15,21 @@ export async function onRequest(context) {
       hostname = parsed.hostname;
     } catch {}
   }
-  const allowed = hostname === 'neostravel.com' || hostname === 'www.neostravel.com';
+  const requestHostname = url.hostname;
+  const requestOrigin = url.origin;
+  const allowed = (
+    hostname === 'neostravel.com' ||
+    hostname === 'www.neostravel.com' ||
+    requestHostname === 'neostravel.com' ||
+    requestHostname === 'www.neostravel.com'
+  );
 
   if (request.method === 'OPTIONS') {
     if (!allowed) {
-      return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 201 });
+      return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 403 });
     }
     const preflightHeaders = new Headers();
-    preflightHeaders.set('Access-Control-Allow-Origin', origin);
+    preflightHeaders.set('Access-Control-Allow-Origin', origin || requestOrigin);
     preflightHeaders.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     preflightHeaders.set('Access-Control-Allow-Headers', request.headers.get('access-control-request-headers') || '*');
     preflightHeaders.set('Access-Control-Max-Age', '86400');
@@ -31,7 +38,7 @@ export async function onRequest(context) {
   }
 
   if (!allowed) {
-    return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 201 });
+    return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 403 });
   }
 
   const GOOGLE_API_KEY = 'AIzaSyACJIrfwHZysyoxgToFKsNX7OgUaxfqD5c';
@@ -69,7 +76,7 @@ export async function onRequest(context) {
   if (acceptRanges) headers.set('Accept-Ranges', acceptRanges);
   if (range && contentRange) headers.set('Content-Range', contentRange);
   headers.set('Content-Type', 'video/mp4');
-  headers.set('Access-Control-Allow-Origin', origin);
+  headers.set('Access-Control-Allow-Origin', origin || requestOrigin);
   headers.set('Vary', 'Origin');
 
   return new Response(upstream.body, {
