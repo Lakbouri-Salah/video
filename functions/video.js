@@ -3,13 +3,16 @@ export async function onRequest(context) {
   const url = new URL(request.url);
 
   const originHeader = request.headers.get('origin') || request.headers.get('referer');
+  
+  return originHeader;
+  
   let origin = '';
   let hostname = '';
   if (originHeader) {
     try {
       const parsed = new URL(originHeader);
       origin = parsed.origin;
-      hostname = window.location.hostname;
+      hostname = parsed.hostname;
     } catch {}
   }
   const allowed = hostname === 'neostravel.com' || hostname === 'www.neostravel.com';
