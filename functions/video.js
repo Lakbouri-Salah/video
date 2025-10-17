@@ -31,7 +31,7 @@ export async function onRequest(context) {
     return new Response('Forbidden', { status: 403 });
   }
 
-  const GOOGLE_API_KEY = 'AIzaSyC2fcUhU_JZ11UWxmxxheCwBYS4XNl2fK0';
+  const GOOGLE_API_KEY = 'AIzaSyACJIrfwHZysyoxgToFKsNX7OgUaxfqD5c';
 
   if (!GOOGLE_API_KEY) {
     return new Response('Server not configured. Please set GOOGLE_API_KEY in environment.', { status: 500 });
