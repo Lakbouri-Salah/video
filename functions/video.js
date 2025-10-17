@@ -63,7 +63,7 @@ export async function onRequest(context) {
     return new Response('Forbidden is not ' + hostname + ' allowed is ' + allowed, { status: 201, headers: debugHeaders });
   }
 
-  const GOOGLE_API_KEY = 'AIzaSyACJIrfwHZysyoxgToFKsNX7OgUaxfqD5c';
+  const GOOGLE_API_KEY = env.GOOGLE_API_KEY;
 
   if (!GOOGLE_API_KEY) {
     return new Response('Server not configured. Please set GOOGLE_API_KEY in environment.', { status: 500 });
