@@ -4,7 +4,7 @@ export async function onRequest(context) {
 
   const originHeader = request.headers.get('origin') || request.headers.get('referer');
   
-  return new Response(originHeader, { status: 200 });
+  // return new Response(originHeader, { status: 200 });
   
   let origin = '';
   let hostname = '';
