@@ -8,7 +8,7 @@ export async function onRequest(context) {
     ? rawOrigin
     : (rawReferer || rawOrigin);
   
-  // return new Response(originHeader, { status: 200 });
+  return new Response('Origin: ' + originHeader, { status: 200 });
   
   let origin = '';
   let hostname = '';
