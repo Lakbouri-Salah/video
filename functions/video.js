@@ -24,22 +24,28 @@ export async function onRequest(context) {
   }
   const requestHostname = url.hostname;
   const requestOrigin = url.origin;
-  const isAllowedOrigin = (
-    hostname === 'neostravel.com' ||
-    hostname === 'www.neostravel.com'
-  );
+  const isNeosOrigin = !!hostname && (hostname === 'neostravel.com' || hostname.endsWith('.neostravel.com'));
+  const isSameOrigin = origin && requestOrigin && origin === requestOrigin;
   // If no Origin/Referer header, treat as server-to-server and allow.
   const allowed = (
-    isAllowedOrigin ||
+    isNeosOrigin ||
+    isSameOrigin ||
     !originHeader ||
     invalidOrigin ||
     requestHostname === 'neostravel.com' ||
-    requestHostname === 'www.neostravel.com'
+    requestHostname.endsWith('.neostravel.com') ||
+    requestHostname.endsWith('.pages.dev') ||
+    requestHostname.endsWith('.workers.dev')
   );
 
   if (request.method === 'OPTIONS') {
     if (!allowed) {
-      return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 403 });
+      const debugHeaders = new Headers();
+      debugHeaders.set('X-Debug-OriginHeader', originHeader || '');
+      debugHeaders.set('X-Debug-Hostname', hostname || '');
+      debugHeaders.set('X-Debug-RequestHostname', requestHostname || '');
+      debugHeaders.set('X-Debug-Allowed', String(allowed));
+      return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 403, headers: debugHeaders });
     }
     const preflightHeaders = new Headers();
     preflightHeaders.set('Access-Control-Allow-Origin', origin || requestOrigin);
@@ -51,7 +57,12 @@ export async function onRequest(context) {
   }
 
   if (!allowed) {
-    return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 403 });
+    const debugHeaders = new Headers();
+    debugHeaders.set('X-Debug-OriginHeader', originHeader || '');
+    debugHeaders.set('X-Debug-Hostname', hostname || '');
+    debugHeaders.set('X-Debug-RequestHostname', requestHostname || '');
+    debugHeaders.set('X-Debug-Allowed', String(allowed));
+    return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 403, headers: debugHeaders });
   }
 
   const GOOGLE_API_KEY = 'AIzaSyACJIrfwHZysyoxgToFKsNX7OgUaxfqD5c';
@@ -91,6 +102,10 @@ export async function onRequest(context) {
   headers.set('Content-Type', 'video/mp4');
   headers.set('Access-Control-Allow-Origin', origin || requestOrigin);
   headers.set('Vary', 'Origin');
+  headers.set('X-Debug-OriginHeader', originHeader || '');
+  headers.set('X-Debug-Hostname', hostname || '');
+  headers.set('X-Debug-RequestHostname', requestHostname || '');
+  headers.set('X-Debug-Allowed', String(allowed));
 
   return new Response(upstream.body, {
     status: upstream.status === 206 ? 206 : 200,
