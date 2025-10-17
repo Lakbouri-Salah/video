@@ -2,24 +2,37 @@ export async function onRequest(context) {
   const { request } = context;
   const url = new URL(request.url);
 
-  const originHeader = request.headers.get('origin') || request.headers.get('referer');
+  const rawOrigin = request.headers.get('origin');
+  const rawReferer = request.headers.get('referer');
+  const originHeader = (rawOrigin && rawOrigin !== 'null' && !rawOrigin.startsWith('about:'))
+    ? rawOrigin
+    : (rawReferer || rawOrigin);
   
   // return new Response(originHeader, { status: 200 });
   
   let origin = '';
   let hostname = '';
+  let invalidOrigin = false;
   if (originHeader) {
     try {
       const parsed = new URL(originHeader);
       origin = parsed.origin;
       hostname = parsed.hostname;
-    } catch {}
+    } catch {
+      invalidOrigin = true;
+    }
   }
   const requestHostname = url.hostname;
   const requestOrigin = url.origin;
-  const allowed = (
+  const isAllowedOrigin = (
     hostname === 'neostravel.com' ||
-    hostname === 'www.neostravel.com' ||
+    hostname === 'www.neostravel.com'
+  );
+  // If no Origin/Referer header, treat as server-to-server and allow.
+  const allowed = (
+    isAllowedOrigin ||
+    !originHeader ||
+    invalidOrigin ||
     requestHostname === 'neostravel.com' ||
     requestHostname === 'www.neostravel.com'
   );
