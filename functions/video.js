@@ -9,7 +9,7 @@ export async function onRequest(context) {
     try {
       const parsed = new URL(originHeader);
       origin = parsed.origin;
-      hostname = parsed.hostname;
+      hostname = window.location.hostname;
     } catch {}
   }
   const allowed = hostname === 'neostravel.com' || hostname === 'www.neostravel.com';
