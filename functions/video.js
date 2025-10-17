@@ -45,7 +45,7 @@ export async function onRequest(context) {
       debugHeaders.set('X-Debug-Hostname', hostname || '');
       debugHeaders.set('X-Debug-RequestHostname', requestHostname || '');
       debugHeaders.set('X-Debug-Allowed', String(allowed));
-      return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 403, headers: debugHeaders });
+      return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 201, headers: debugHeaders });
     }
     const preflightHeaders = new Headers();
     preflightHeaders.set('Access-Control-Allow-Origin', origin || requestOrigin);
@@ -62,7 +62,7 @@ export async function onRequest(context) {
     debugHeaders.set('X-Debug-Hostname', hostname || '');
     debugHeaders.set('X-Debug-RequestHostname', requestHostname || '');
     debugHeaders.set('X-Debug-Allowed', String(allowed));
-    return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 403, headers: debugHeaders });
+    return new Response('Forbidden is not '+hostname + ' allowed is '+allowed, { status: 201, headers: debugHeaders });
   }
 
   const GOOGLE_API_KEY = 'AIzaSyACJIrfwHZysyoxgToFKsNX7OgUaxfqD5c';
