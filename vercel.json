@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 2,
   "rewrites": [
     { "source": "/video", "destination": "/api/video" }
   ]
