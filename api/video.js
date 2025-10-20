@@ -1,4 +1,4 @@
-export const config = { runtime: 'edge' };
+export const runtime = 'edge';
 
 export default async function handler(request) {
   const url = new URL(request.url);
