@@ -1,10 +1,5 @@
 {
   "version": 2,
-  "functions": {
-    "api/video.js": {
-      "runtime": "edge"
-    }
-  },
   "routes": [
     { "src": "/video", "dest": "/api/video" }
   ]
