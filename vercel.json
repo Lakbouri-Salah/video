@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "routes": [
-    { "src": "/video", "dest": "/api/video" }
+  "rewrites": [
+    { "source": "/video", "destination": "/api/video" }
   ]
 }
