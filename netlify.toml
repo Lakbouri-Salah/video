@@ -1,0 +1,7 @@
+[build]
+  publish = "public"
+  command = ""
+
+[[edge_functions]]
+  path = "/video"
+  function = "video"
