@@ -1,8 +1,12 @@
-module.exports = async (req, res) => {
-  const { query, headers } = req;
+export const config = {
+  runtime: 'edge',
+};
+
+export default async function handler(request) {
+  const url = new URL(request.url);
   
-  const rawOrigin = headers.origin;
-  const rawReferer = headers.referer;
+  const rawOrigin = request.headers.get('origin');
+  const rawReferer = request.headers.get('referer');
   const originHeader = (rawOrigin && rawOrigin !== 'null' && !rawOrigin.startsWith('about:'))
     ? rawOrigin
     : (rawReferer || rawOrigin);
@@ -20,9 +24,10 @@ module.exports = async (req, res) => {
     }
   }
 
-  const requestHostname = req.headers.host || '';
+  const requestHostname = url.hostname;
+  const requestOrigin = url.origin;
   const isNeosOrigin = !!hostname && (hostname === 'neostravel.com' || hostname.endsWith('.neostravel.com'));
-  const isSameOrigin = origin && requestHostname && hostname === requestHostname;
+  const isSameOrigin = origin && requestOrigin && origin === requestOrigin;
   const allowed = (
     isNeosOrigin ||
     isSameOrigin ||
@@ -33,95 +38,77 @@ module.exports = async (req, res) => {
     requestHostname.endsWith('.vercel.app')
   );
 
-  if (req.method === 'OPTIONS') {
+  if (request.method === 'OPTIONS') {
     if (!allowed) {
-      res.setHeader('X-Debug-OriginHeader', originHeader || '');
-      res.setHeader('X-Debug-Hostname', hostname || '');
-      res.setHeader('X-Debug-RequestHostname', requestHostname || '');
-      res.setHeader('X-Debug-Allowed', String(allowed));
-      return res.status(403).send('Forbidden');
+      const debugHeaders = new Headers();
+      debugHeaders.set('X-Debug-OriginHeader', originHeader || '');
+      debugHeaders.set('X-Debug-Hostname', hostname || '');
+      debugHeaders.set('X-Debug-RequestHostname', requestHostname || '');
+      debugHeaders.set('X-Debug-Allowed', String(allowed));
+      return new Response('Forbidden', { status: 403, headers: debugHeaders });
     }
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', headers['access-control-request-headers'] || '*');
-    res.setHeader('Access-Control-Max-Age', '86400');
-    res.setHeader('Vary', 'Origin');
-    return res.status(204).end();
+    const preflightHeaders = new Headers();
+    preflightHeaders.set('Access-Control-Allow-Origin', origin || requestOrigin);
+    preflightHeaders.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    preflightHeaders.set('Access-Control-Allow-Headers', request.headers.get('access-control-request-headers') || '*');
+    preflightHeaders.set('Access-Control-Max-Age', '86400');
+    preflightHeaders.set('Vary', 'Origin');
+    return new Response(null, { status: 204, headers: preflightHeaders });
   }
 
   if (!allowed) {
-    res.setHeader('X-Debug-OriginHeader', originHeader || '');
-    res.setHeader('X-Debug-Hostname', hostname || '');
-    res.setHeader('X-Debug-RequestHostname', requestHostname || '');
-    res.setHeader('X-Debug-Allowed', String(allowed));
-    return res.status(403).send('Forbidden');
+    const debugHeaders = new Headers();
+    debugHeaders.set('X-Debug-OriginHeader', originHeader || '');
+    debugHeaders.set('X-Debug-Hostname', hostname || '');
+    debugHeaders.set('X-Debug-RequestHostname', requestHostname || '');
+    debugHeaders.set('X-Debug-Allowed', String(allowed));
+    return new Response('Forbidden', { status: 403, headers: debugHeaders });
   }
 
   const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
   if (!GOOGLE_API_KEY) {
-    return res.status(500).send('Server not configured. Please set GOOGLE_API_KEY in environment.');
+    return new Response('Server not configured. Please set GOOGLE_API_KEY in environment.', { status: 500 });
   }
 
-  const fileId = query.id;
+  const fileId = url.searchParams.get('id');
   if (!fileId) {
-    return res.status(400).send('Missing file id. Provide ?id=YOUR_FILE_ID');
+    return new Response('Missing file id. Provide ?id=YOUR_FILE_ID', { status: 400 });
   }
 
-  const range = headers.range || headers.Range;
+  const range = request.headers.get('range') || request.headers.get('Range');
   const driveUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${GOOGLE_API_KEY}`;
 
-  try {
-    const upstreamHeaders = {};
-    if (range) {
-      upstreamHeaders.Range = range;
-    }
-
-    const upstream = await fetch(driveUrl, { headers: upstreamHeaders });
-
-    if (!upstream.ok && upstream.status !== 206) {
-      const text = await upstream.text().catch(() => '');
-      return res.status(upstream.status).send(text || 'Failed to fetch video from Google Drive');
-    }
-
-    const contentLength = upstream.headers.get('content-length');
-    const acceptRanges = upstream.headers.get('accept-ranges');
-    const contentRange = upstream.headers.get('content-range');
-
-    if (contentLength) res.setHeader('Content-Length', contentLength);
-    if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges);
-    if (range && contentRange) res.setHeader('Content-Range', contentRange);
-    
-    res.setHeader('Content-Type', 'video/mp4');
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Vary', 'Origin');
-    res.setHeader('X-Debug-OriginHeader', originHeader || '');
-    res.setHeader('X-Debug-Hostname', hostname || '');
-    res.setHeader('X-Debug-RequestHostname', requestHostname || '');
-    res.setHeader('X-Debug-Allowed', String(allowed));
-
-    res.status(upstream.status === 206 ? 206 : 200);
-
-    const reader = upstream.body.getReader();
-    const stream = new ReadableStream({
-      async start(controller) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          controller.enqueue(value);
-        }
-        controller.close();
-      }
-    });
-
-    for await (const chunk of stream) {
-      res.write(Buffer.from(chunk));
-    }
-    res.end();
-
-  } catch (err) {
-    console.error('Error in /video route:', err);
-    if (!res.headersSent) {
-      res.status(500).send('Internal server error');
-    }
+  const upstreamHeaders = {};
+  if (range) {
+    upstreamHeaders.Range = range;
   }
-};
+
+  const upstream = await fetch(driveUrl, { headers: upstreamHeaders });
+
+  if (!upstream.ok && upstream.status !== 206) {
+    const text = await upstream.text().catch(() => '');
+    return new Response(text || 'Failed to fetch video from Google Drive', { status: upstream.status });
+  }
+
+  const headers = new Headers();
+  const contentLength = upstream.headers.get('content-length');
+  const acceptRanges = upstream.headers.get('accept-ranges');
+  const contentRange = upstream.headers.get('content-range');
+
+  if (contentLength) headers.set('Content-Length', contentLength);
+  if (acceptRanges) headers.set('Accept-Ranges', acceptRanges);
+  if (range && contentRange) headers.set('Content-Range', contentRange);
+  
+  headers.set('Content-Type', 'video/mp4');
+  headers.set('Access-Control-Allow-Origin', origin || requestOrigin);
+  headers.set('Vary', 'Origin');
+  headers.set('X-Debug-OriginHeader', originHeader || '');
+  headers.set('X-Debug-Hostname', hostname || '');
+  headers.set('X-Debug-RequestHostname', requestHostname || '');
+  headers.set('X-Debug-Allowed', String(allowed));
+
+  return new Response(upstream.body, {
+    status: upstream.status === 206 ? 206 : 200,
+    headers,
+  });
+}
